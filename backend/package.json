@@ -1,0 +1,31 @@
+{
+  "name": "negarit-backend",
+  "version": "1.0.0",
+  "description": "NegaritAI Backend - Enterprise Threat Detection API",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ai",
+    "security",
+    "threat-detection",
+    "cybersecurity",
+    "express",
+    "nodejs"
+  ],
+  "author": "NegaritAI Team",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.18.1",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "docx": "^9.7.1",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3"
+  }
+}
