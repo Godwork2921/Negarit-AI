@@ -1,5 +1,6 @@
 "use client";
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext } from "react";
+import { useStoredString } from "../lib/store";
 
 const LanguageContext = createContext();
 
@@ -16,6 +17,7 @@ const translations = {
     settings: "Settings",
     library: "Library",
     help: "Help & Support",
+    helpDesc: "Guidance on recognizing and avoiding today's threats",
     logOut: "Log out",
     logIn: "Log in",
     signUp: "Sign up",
@@ -203,6 +205,9 @@ const translations = {
     // ── Register ──
     secureDigitalFuture: "Secure Your Digital Future.",
     createAccountDesc: "Create your account today and protect against phishing, deepfakes, and AI-generated scams with enterprise-grade security.",
+    perk1: "Unlimited message, URL and image scans",
+    perk2: "Full threat history with exportable reports",
+    perk3: "Deepfake and OCR detection included",
     fillDetails: "Fill in your details to get started",
     fullName: "Full Name",
     namePlaceholder: "John Doe",
@@ -226,6 +231,10 @@ const translations = {
     pasteMessageHere: "Paste the suspicious email, SMS, or chat message here...",
     clear: "Clear",
     results: "Results",
+    analysis: "Analysis",
+    unknown: "Unknown",
+    recentScans: "recent scans saved",
+    imagePreview: "Selected image preview",
     submitToSeeResults: "Submit content to see analysis results",
     aiWillReturn: "The AI will return a risk score, verdict, and explanation",
     aiAnalyzing: "AI model analyzing...",
@@ -243,6 +252,9 @@ const translations = {
     askAboutCybersecurity: "Ask about cybersecurity...",
     sorryCouldNotProcess: "Sorry, I couldn't process that.",
     networkErrorChat: "Network error. Please try again.",
+    close: "Close",
+    language: "Language",
+    send: "Send message",
     welcomeMessage: "Hi! I'm Negarit AI Assistant. Ask me about phishing, cybersecurity, or what Negarit AI can do for you.",
     // ── Navbar ──
     navAnalyze: "Analyze",
@@ -337,6 +349,7 @@ const translations = {
     settings: "ቅንብሮች",
     library: "ቤተ መጻሕፍት",
     help: "እርዳታ እና ድጋፍ",
+    helpDesc: "የዛሬውን የሳይበር ድንሰቶች በመለየትና በማስቀረት የሚረዱ መመሪያዎች",
     logOut: "ውጣ",
     logIn: "ግባ",
     signUp: "ተመዝገብ",
@@ -415,6 +428,7 @@ const translations = {
     forgeryThreat: "ስጋት — የሜታዳታ ጣልቃ ገብነት ተገኝቷል።",
     forgeryClear: "ንጹህ — ምንም የሜታዳታ ጣልቃ ገብነት ወይም የሐሰት ምልክቶች የሉም።",
     aiRecommendation: "AI ምክር",
+    blockRecommendation: "አግድ — የአይ ማ넥퓰ሌሽን ጠንካራ ምልክቶች ተገኝተዋል። በገጹ ውስጥ ያሉትን አገናኞች አይጫኑ።",
     allowRecommendation: "ፍቀድ — ምስሉ ትክክለኛ ይመስላል።",
     analysisDetails: "የትንተና ዝርዝሮች",
     downloadPdf: "ፒዲኤፍ አውርድ",
@@ -523,6 +537,9 @@ const translations = {
     // ── Register ──
     secureDigitalFuture: "ዲጂታል የወደፊትዎን ያስጠብቁ።",
     createAccountDesc: "ዛሬ መለያዎን ይፍጠሩ እና ከማጭበርበር፣ ዲፕፌክ እና በAI ከሚፈጠሩ ማጭበርበሮች ይጠበቁ።",
+    perk1: "ያልተወሰነ የመልዕክት፣ ዩአርኤል እና የምስል ምርመራ",
+    perk2: "ሙሉ የስጋት ታሪህ ከላቀች ሪፖርቶች ጋር",
+    perk3: "የዲፕፌክ እና ኦሲአር ማወቅ ያካትታል",
     fillDetails: "ለመጀመር ዝርዝሮችዎን ይሙሉ",
     fullName: "ሙሉ ስም",
     namePlaceholder: "ዮሐንስ ደሴ",
@@ -546,6 +563,10 @@ const translations = {
     pasteMessageHere: "አጠራጣሪ ኢሜይል፣ ኤስኤምኤስ ወይም የቻት መልእክት እዚህ ይለጥፉ...",
     clear: "አጽዳ",
     results: "ውጤቶች",
+    analysis: "ትንተና",
+    unknown: "ያልታወቀ",
+    recentScans: "የተቀመጡ ምርመራዎች",
+    imagePreview: "የተመረጠ ምስል ቅዳማ",
     submitToSeeResults: "የትንተና ውጤቶችን ለማየት ይዘት ያስገቡ",
     aiWillReturn: "AI የአደጋ ውጤት፣ ፍርድ እና ማብራሪያ ይመልሳል",
     aiAnalyzing: "AI ሞዴል እየተነተነ ነው...",
@@ -563,6 +584,9 @@ const translations = {
     askAboutCybersecurity: "ስለ ሳይበር ደህንነት ይጠይቁ...",
     sorryCouldNotProcess: "ይቅርታ፣ ያንን ማስኬድ አልቻልኩም።",
     networkErrorChat: "የአውታረ መረብ ስህተት። እባክዎ እንደገና ይሞክሩ።",
+    close: "ዝጋ",
+    language: "ቋንቋ",
+    send: "መልእክት ላክ",
     welcomeMessage: "ሰላም! እኔ ኔጋሪት AI ረዳት ነኝ። ስለ ማጭበርበር፣ ሳይበር ደህንነት ወይም ኔጋሪት AI ምን ሊያደርግልዎ እንደሚችል ይጠይቁ።",
     // ── Navbar ──
     navAnalyze: "ተንትን",
@@ -648,16 +672,7 @@ const translations = {
 };
 
 export function LanguageProvider({ children }) {
-  const [lang, setLang] = useState("en");
-
-  useEffect(() => {
-    const saved = localStorage.getItem("lang");
-    if (saved) setLang(saved);
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("lang", lang);
-  }, [lang]);
+  const [lang, setLang] = useStoredString("lang", "en");
 
   const t = (key) => translations[lang]?.[key] ?? translations.en[key] ?? key;
 

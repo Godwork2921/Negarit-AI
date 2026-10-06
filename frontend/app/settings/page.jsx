@@ -1,19 +1,46 @@
 "use client";
-import { useState, useEffect } from "react";
+
 import { motion } from "framer-motion";
-import Sidebar from "../../components/Sidebar";
-import { getUser, logout } from "../../lib/auth";
 import { useRouter } from "next/navigation";
+import Sidebar from "../../components/Sidebar";
+import AmbientBackdrop from "../../components/AmbientBackdrop";
+import { Button } from "../../components/UI";
+import { EASE } from "../../lib/animations";
+import { logout } from "../../lib/auth";
+import { useStoredJSON, writeStoredJSON } from "../../lib/store";
+import { USER_STORAGE_KEY } from "../../lib/constants";
 import { useLanguage } from "../../contexts/LanguageContext";
+
+function Section({ title, children, delay = 0 }) {
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay, ease: EASE.out }}
+      className="card p-6"
+    >
+      <h2 className="mb-5 text-lg font-bold text-ink">{title}</h2>
+      {children}
+    </motion.section>
+  );
+}
+
+function Row({ label, hint, children }) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-[var(--border)] py-3.5 last:border-0 last:pb-0 first:pt-0">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-ink">{label}</p>
+        <p className="mt-0.5 text-xs text-subtle">{hint}</p>
+      </div>
+      <div className="shrink-0">{children}</div>
+    </div>
+  );
+}
 
 export default function SettingsPage() {
   const router = useRouter();
   const { t } = useLanguage();
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    setUser(getUser());
-  }, []);
+  const [user] = useStoredJSON(USER_STORAGE_KEY, null);
 
   const handleLogout = () => {
     logout();
@@ -21,90 +48,86 @@ export default function SettingsPage() {
   };
 
   const handleClearHistory = () => {
-    if (confirm(t('clearHistoryConfirm'))) {
-      localStorage.removeItem("analysisHistory");
-      alert(t('historyCleared'));
+    if (confirm(t("clearHistoryConfirm"))) {
+      writeStoredJSON("analysisHistory", null);
+      alert(t("historyCleared"));
     }
   };
 
+  const dangerButton =
+    "rounded-lg bg-danger-soft px-3.5 py-1.5 text-xs font-bold text-danger transition-colors hover:bg-danger hover:text-[var(--text-inverse)]";
+
   return (
-    <div className="min-h-screen flex bg-[#0a0a1a] text-white">
+    <div className="relative min-h-screen">
       <Sidebar />
-      <main className="flex-1 lg:ml-48 p-6 lg:p-10 space-y-8">
-        <motion.h1 initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-indigo-200 to-purple-300 bg-clip-text text-transparent">
-          {t('settings')}
-        </motion.h1>
+      <AmbientBackdrop />
 
-        {/* Profile */}
-        <motion.section initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-[#0f0f2a]/60 border border-white/5 rounded-xl p-6 space-y-5">
-          <h2 className="text-lg font-bold">{t('profile')}</h2>
+      <main className="relative z-10 mx-auto max-w-3xl space-y-6 px-6 pb-20 pt-20 lg:ml-64 lg:pt-12">
+        <motion.header
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: EASE.out }}
+        >
+          <h1 className="text-3xl font-extrabold tracking-tight text-ink md:text-4xl">
+            {t("settings")}
+          </h1>
+        </motion.header>
+
+        <Section title={t("profile")} delay={0.06}>
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xl font-bold text-white">
+            <span
+              className="grid size-14 shrink-0 place-items-center rounded-2xl bg-brand-gradient text-xl font-extrabold text-[var(--text-inverse)]"
+              aria-hidden="true"
+            >
               {user?.name?.[0] || "U"}
-            </div>
-            <div>
-              <p className="font-semibold">{user?.name || "User"}</p>
-              <p className="text-sm text-gray-500">{user?.email || t('notSignedIn')}</p>
-            </div>
-          </div>
-        </motion.section>
-
-        {/* Security */}
-        <motion.section initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-[#0f0f2a]/60 border border-white/5 rounded-xl p-6 space-y-4">
-          <h2 className="text-lg font-bold">{t('security')}</h2>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
-              <div>
-                <p className="text-sm font-medium">{t('authMethod')}</p>
-                <p className="text-xs text-gray-500">{t('emailAndPassword')}</p>
-              </div>
-              <span className="text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">{t('active')}</span>
-            </div>
-            <div className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
-              <div>
-                <p className="text-sm font-medium">{t('sessionLabel')}</p>
-                <p className="text-xs text-gray-500">{t('loggedInWithJwt')}</p>
-              </div>
-              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleLogout} className="text-xs text-red-400 bg-red-500/10 px-3 py-1.5 rounded-lg hover:bg-red-500/20 transition-colors">
-                {t('signOut')}
-              </motion.button>
+            </span>
+            <div className="min-w-0">
+              <p className="truncate font-bold text-ink">{user?.name || "User"}</p>
+              <p className="truncate text-sm text-subtle">{user?.email || t("notSignedIn")}</p>
             </div>
           </div>
-        </motion.section>
+        </Section>
 
-        {/* Data */}
-        <motion.section initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-[#0f0f2a]/60 border border-white/5 rounded-xl p-6 space-y-4">
-          <h2 className="text-lg font-bold">{t('dataStorage')}</h2>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
-              <div>
-                <p className="text-sm font-medium">{t('analysisHistory')}</p>
-                <p className="text-xs text-gray-500">{t('storedLocally')}</p>
-              </div>
-              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleClearHistory} className="text-xs text-red-400 bg-red-500/10 px-3 py-1.5 rounded-lg hover:bg-red-500/20 transition-colors">
-                {t('clearHistory')}
-              </motion.button>
-            </div>
-            <div className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
-              <div>
-                <p className="text-sm font-medium">{t('appVersion')}</p>
-                <p className="text-xs text-gray-500">{t('negaritAiVersion')}</p>
-              </div>
-              <span className="text-xs text-gray-500">{t('upToDate')}</span>
-            </div>
-          </div>
-        </motion.section>
+        <Section title={t("security")} delay={0.12}>
+          <Row label={t("authMethod")} hint={t("emailAndPassword")}>
+            <span className="rounded-full bg-success-soft px-3 py-1 text-xs font-bold text-success">
+              {t("active")}
+            </span>
+          </Row>
+          <Row label={t("sessionLabel")} hint={t("loggedInWithJwt")}>
+            <button type="button" onClick={handleLogout} className={dangerButton}>
+              {t("signOut")}
+            </button>
+          </Row>
+        </Section>
 
-        {/* About */}
-        <motion.section initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="bg-[#0f0f2a]/60 border border-white/5 rounded-xl p-6 space-y-3">
-          <h2 className="text-lg font-bold">{t('about')}</h2>
-          <p className="text-sm text-gray-400 leading-relaxed">
-            {t('aboutDescription')}
+        <Section title={t("dataStorage")} delay={0.18}>
+          <Row label={t("analysisHistory")} hint={t("storedLocally")}>
+            <button type="button" onClick={handleClearHistory} className={dangerButton}>
+              {t("clearHistory")}
+            </button>
+          </Row>
+          <Row label={t("appVersion")} hint={t("negaritAiVersion")}>
+            <span className="rounded-full bg-success-soft px-3 py-1 text-xs font-bold text-success">
+              {t("upToDate")}
+            </span>
+          </Row>
+        </Section>
+
+        <Section title={t("about")} delay={0.24}>
+          <p className="text-sm leading-relaxed text-muted">{t("aboutDescription")}</p>
+          <p className="mt-3 text-xs text-subtle">
+            {t("copyright").replace("{year}", new Date().getFullYear())}
           </p>
-          <p className="text-xs text-gray-600">
-            {t('copyright').replace('{year}', new Date().getFullYear())}
-          </p>
-        </motion.section>
+          <Button
+            as="a"
+            href="mailto:support@negarit-ai.com"
+            variant="secondary"
+            className="mt-5"
+          >
+            {t("contactSupport")}
+          </Button>
+        </Section>
       </main>
     </div>
   );

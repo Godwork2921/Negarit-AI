@@ -6,6 +6,7 @@ import {
   ERROR_MESSAGES,
   AUTH_HEADER_PREFIX,
 } from "./constants";
+import { notifyStored } from "./store";
 
 /**
  * Login user with email and password
@@ -79,6 +80,8 @@ export async function registerUser(name, email, password) {
 export function logout() {
   localStorage.removeItem(TOKEN_STORAGE_KEY);
   localStorage.removeItem(USER_STORAGE_KEY);
+  notifyStored(USER_STORAGE_KEY);
+  notifyStored(TOKEN_STORAGE_KEY);
 }
 
 /**

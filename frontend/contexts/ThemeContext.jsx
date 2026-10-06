@@ -1,25 +1,47 @@
 "use client";
-import { createContext, useContext, useState, useEffect } from "react";
 
-const ThemeContext = createContext();
+import { createContext, useCallback, useContext, useEffect } from "react";
+import { useMediaQuery, useStoredString } from "../lib/store";
 
+const ThemeContext = createContext(null);
+
+export const THEME_STORAGE_KEY = "theme";
+
+function isTheme(value) {
+  return value === "light" || value === "dark";
+}
+
+/**
+ * Theme is *derived*, never copied into state:
+ *   stored choice → OS preference → dark.
+ *
+ * Persisting on every change (the previous approach) froze the OS preference
+ * after the first paint, so "follow the system" silently stopped working.
+ * We only write to storage when the user actually makes a choice.
+ */
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState("dark");
+  const prefersLight = useMediaQuery("(prefers-color-scheme: light)");
+  const [stored, setStored] = useStoredString(THEME_STORAGE_KEY, "");
 
-  useEffect(() => {
-    const saved = localStorage.getItem("theme");
-    if (saved) setTheme(saved);
-  }, []);
+  const theme = isTheme(stored) ? stored : prefersLight ? "light" : "dark";
 
+  // External system: keep the document in sync with the derived value.
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("theme", theme);
   }, [theme]);
 
-  const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
+  const setTheme = useCallback(
+    (next) => setStored(isTheme(next) ? next : ""),
+    [setStored]
+  );
+
+  const toggleTheme = useCallback(
+    () => setStored(theme === "dark" ? "light" : "dark"),
+    [setStored, theme]
+  );
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );

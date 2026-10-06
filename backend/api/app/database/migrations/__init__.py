@@ -1,0 +1,1 @@
+"""Negarit AI API service."""

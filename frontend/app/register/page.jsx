@@ -1,14 +1,21 @@
 "use client";
+
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { registerUser } from "../../lib/auth";
 import { initializeGoogleAuth, renderGoogleSignInButton } from "../../lib/google-auth";
 import { useLanguage } from "../../contexts/LanguageContext";
+import { EASE } from "../../lib/animations";
+
+const PERKS = ["perk1", "perk2", "perk3"];
 
 export default function RegisterPage() {
   const router = useRouter();
   const { t } = useLanguage();
+  const reduced = useReducedMotion();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,113 +41,272 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
     if (password !== confirm) {
-      setError(t('passwordsDoNotMatch'));
-      setLoading(false);
+      setError(t("passwordsDoNotMatch"));
       return;
     }
+    setLoading(true);
     try {
       await registerUser(name, email, password);
       window.location.href = "/dashboard";
     } catch (err) {
       console.error("Register error:", err);
-      if (err.message === "Failed to fetch" || err.message?.includes("fetch")) {
-        setError(t('serverError'));
-      } else {
-        setError(err.message);
-      }
+      setError(
+        err.message === "Failed to fetch" || err.message?.includes("fetch")
+          ? t("serverError")
+          : err.message
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  const rise = (delay = 0) => ({
+    initial: reduced ? { opacity: 1 } : { opacity: 0, y: 18 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.55, delay, ease: EASE.out },
+  });
+
   return (
-    <div className="min-h-screen grid md:grid-cols-2">
-      {/* Left Panel */}
-      <div className="bg-gradient-to-br from-blue-900 via-purple-800 to-blue-900 text-white flex flex-col justify-center px-12 py-16 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-72 h-72 opacity-10">
-          <svg viewBox="0 0 200 200" fill="none" className="w-full h-full">
-            <circle cx="100" cy="100" r="80" stroke="currentColor" strokeWidth="0.5" />
-            <circle cx="100" cy="100" r="50" stroke="currentColor" strokeWidth="0.5" />
-            <circle cx="100" cy="100" r="20" stroke="currentColor" strokeWidth="0.5" />
-            <path d="M100 20v160M20 100h160" stroke="currentColor" strokeWidth="0.3" />
-          </svg>
-        </div>
+    <div className="grid min-h-screen lg:grid-cols-2">
+      {/* ── Brand panel ── */}
+      <aside className="relative hidden overflow-hidden bg-[var(--surface)] p-12 lg:flex lg:flex-col lg:justify-center">
+        <div
+          aria-hidden="true"
+          className="surface-grid absolute inset-0 opacity-60 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]"
+        />
         <motion.div
-          className="absolute -bottom-10 -left-10 w-48 h-48 opacity-5"
-          animate={{ y: [0, -10, 0], rotate: [0, 3, 0] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <svg viewBox="0 0 100 120" fill="currentColor" className="w-full h-full">
-            <path d="M50 0L0 20v30c0 30 20 55 50 70 30-15 50-40 50-70V20L50 0z" />
-          </svg>
-        </motion.div>
-        <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-3xl font-bold mb-4">{t('negaritAi')}</motion.h1>
-        <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-4xl md:text-5xl font-extrabold mb-6">{t('secureDigitalFuture')}</motion.h2>
-        <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="text-lg text-gray-300 mb-8 max-w-md">{t('createAccountDesc')}</motion.p>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flex space-x-4 mb-8">
-          <span className="bg-blue-700/80 backdrop-blur-sm px-4 py-2 rounded-lg text-sm font-semibold">{t('accuracy994')}</span>
-          <span className="bg-purple-700/80 backdrop-blur-sm px-4 py-2 rounded-lg text-sm font-semibold">{t('zeroDayProtected')}</span>
-        </motion.div>
-        <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="text-gray-400">{t('trustedBy10k')}</motion.p>
-      </div>
+          aria-hidden="true"
+          className="glow-orb -left-24 top-[12%] size-[28rem] opacity-60"
+          animate={reduced ? undefined : { y: [0, -30, 0] }}
+          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          aria-hidden="true"
+          className="glow-orb -right-24 bottom-[12%] size-[24rem] opacity-45"
+          animate={reduced ? undefined : { y: [0, 26, 0] }}
+          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+        />
 
-      {/* Right Form */}
-      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, ease: "easeOut" }} className="bg-white flex flex-col justify-center px-12 py-16">
-        <h2 className="text-2xl font-bold mb-2">{t('createAccount')}</h2>
-        <p className="text-gray-600 mb-6">{t('fillDetails')}</p>
+        <div className="relative">
+          <motion.div {...rise(0)} className="flex items-center gap-3">
+            <span className="grid size-11 place-items-center rounded-xl2 bg-brand-gradient shadow-[var(--shadow-brand)]">
+              <svg
+                className="size-6 text-[var(--text-inverse)]"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                <path d="m9 12 2 2 4-4" />
+              </svg>
+            </span>
+            <span className="text-lg font-bold tracking-tight text-ink">
+              Negarit<span className="text-primary">AI</span>
+            </span>
+          </motion.div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg">{error}</div>
-          )}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('fullName')}</label>
-            <input type="text" value={name} onChange={(e) => { setName(e.target.value); setError(""); }} placeholder={t('namePlaceholder')} required className="w-full border border-gray-300 rounded-lg px-4 py-2 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:outline-none" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('emailAddress')}</label>
-            <input type="email" value={email} onChange={(e) => { setEmail(e.target.value); setError(""); }} placeholder={t('emailPlaceholder')} required className="w-full border border-gray-300 rounded-lg px-4 py-2 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:outline-none" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('password')}</label>
-            <input type="password" value={password} onChange={(e) => { setPassword(e.target.value); setError(""); }} placeholder="••••••••" required className="w-full border border-gray-300 rounded-lg px-4 py-2 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:outline-none" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('confirmPassword')}</label>
-            <input type="password" value={confirm} onChange={(e) => { setConfirm(e.target.value); setError(""); }} placeholder="••••••••" required className="w-full border border-gray-300 rounded-lg px-4 py-2 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:outline-none" />
-          </div>
-          <motion.button
-            type="submit"
-            disabled={loading}
-            whileHover={!loading ? { scale: 1.02, boxShadow: "0 4px 20px rgba(147,51,234,0.35)" } : {}}
-            whileTap={!loading ? { scale: 0.98 } : {}}
-            className="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 transition-all disabled:opacity-60"
+          <motion.h1
+            {...rise(0.08)}
+            className="mt-10 text-4xl font-extrabold leading-[1.08] tracking-tight text-ink xl:text-5xl"
           >
-            {loading ? t('creatingAccount') : t('signUp')}
-          </motion.button>
-        </form>
+            {t("secureDigitalFuture")}
+          </motion.h1>
 
-        <div className="flex items-center my-6">
-          <div className="flex-grow border-t border-gray-300"></div>
-          <span className="mx-4 text-gray-500">{t('orContinueWith')}</span>
-          <div className="flex-grow border-t border-gray-300"></div>
+          <motion.p {...rise(0.16)} className="mt-5 max-w-md text-base leading-relaxed text-muted">
+            {t("createAccountDesc")}
+          </motion.p>
+
+          <motion.ul {...rise(0.24)} className="mt-8 space-y-3">
+            {PERKS.map((perk) => (
+              <li key={perk} className="flex items-start gap-3 text-sm text-muted">
+                <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-md bg-success-soft text-success">
+                  <svg
+                    className="size-3"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path d="m9 12 2 2 4-4" />
+                  </svg>
+                </span>
+                {t(perk)}
+              </li>
+            ))}
+          </motion.ul>
+
+          <motion.p {...rise(0.32)} className="mt-9 text-sm text-subtle">
+            {t("trustedBy10k")}
+          </motion.p>
         </div>
+      </aside>
 
-        <div id="google-signin-button" className="flex justify-center min-h-[40px]"></div>
+      {/* ── Form panel ── */}
+      <main className="flex items-center justify-center px-6 py-14 sm:px-10">
+        <motion.div
+          initial={reduced ? { opacity: 1 } : { opacity: 0, x: 24 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, ease: EASE.out }}
+          className="w-full max-w-sm"
+        >
+          <Link href="/" className="mb-10 inline-flex items-center gap-2.5 lg:hidden">
+            <span className="grid size-9 place-items-center rounded-xl bg-brand-gradient">
+              <svg
+                className="size-5 text-[var(--text-inverse)]"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                <path d="m9 12 2 2 4-4" />
+              </svg>
+            </span>
+            <span className="text-base font-bold tracking-tight text-ink">
+              Negarit<span className="text-primary">AI</span>
+            </span>
+          </Link>
 
-        {!googleReady && (
-          <p className="text-center text-xs text-gray-400 mt-2">{t('googleAuthInfo')}</p>
-        )}
+          <h2 className="text-2xl font-extrabold tracking-tight text-ink">{t("createAccount")}</h2>
+          <p className="mt-1.5 text-sm text-muted">{t("fillDetails")}</p>
 
-        <p className="mt-6 text-gray-600 text-sm text-center">
-          {t('alreadyHaveAccount')}{" "}
-          <a href="/login" className="text-purple-600 hover:underline font-medium">{t('signIn')}</a>
-        </p>
-        <p className="mt-2 text-gray-400 text-xs text-center">{t('protectedByNegarit')}</p>
-      </motion.div>
+          <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+            {error ? (
+              <p
+                role="alert"
+                className="rounded-xl border border-[var(--danger)]/30 bg-danger-soft px-4 py-3 text-sm text-danger"
+              >
+                {error}
+              </p>
+            ) : null}
+
+            <div>
+              <label htmlFor="name" className="mb-1.5 block text-sm font-semibold text-ink">
+                {t("fullName")}
+              </label>
+              <input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setError("");
+                }}
+                placeholder={t("namePlaceholder")}
+                autoComplete="name"
+                required
+                className="input-field"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="email" className="mb-1.5 block text-sm font-semibold text-ink">
+                {t("emailAddress")}
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError("");
+                }}
+                placeholder={t("emailPlaceholder")}
+                autoComplete="email"
+                required
+                className="input-field"
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="password" className="mb-1.5 block text-sm font-semibold text-ink">
+                  {t("password")}
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError("");
+                  }}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  required
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <label htmlFor="confirm" className="mb-1.5 block text-sm font-semibold text-ink">
+                  {t("confirmPassword")}
+                </label>
+                <input
+                  id="confirm"
+                  type="password"
+                  value={confirm}
+                  onChange={(e) => {
+                    setConfirm(e.target.value);
+                    setError("");
+                  }}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  required
+                  className="input-field"
+                />
+              </div>
+            </div>
+
+            <button type="submit" disabled={loading} className="btn-primary w-full py-3">
+              {loading ? (
+                <>
+                  <span
+                    className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+                    aria-hidden="true"
+                  />
+                  {t("creatingAccount")}
+                </>
+              ) : (
+                t("signUp")
+              )}
+            </button>
+          </form>
+
+          <div className="my-7 flex items-center gap-4">
+            <span className="h-px flex-1 bg-[var(--border)]" />
+            <span className="text-xs font-medium uppercase tracking-wider text-subtle">
+              {t("orContinueWith")}
+            </span>
+            <span className="h-px flex-1 bg-[var(--border)]" />
+          </div>
+
+          <div id="google-signin-button" className="flex min-h-[40px] justify-center" />
+
+          {!googleReady ? (
+            <p className="mt-2 text-center text-xs text-subtle">{t("googleAuthInfo")}</p>
+          ) : null}
+
+          <p className="mt-8 text-center text-sm text-muted">
+            {t("alreadyHaveAccount")}{" "}
+            <Link href="/login" className="font-semibold text-primary hover:underline">
+              {t("signIn")}
+            </Link>
+          </p>
+          <p className="mt-2 text-center text-xs text-subtle">{t("protectedByNegarit")}</p>
+        </motion.div>
+      </main>
     </div>
   );
 }

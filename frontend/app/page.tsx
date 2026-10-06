@@ -8,27 +8,25 @@ import Footer from "../components/Footer";
 
 export default function LandingPage() {
   return (
-    <div className="bg-dark text-white font-sans">
-      {/* Top Navigation */}
+    <>
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-brand-gradient focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-[var(--text-inverse)]"
+      >
+        Skip to content
+      </a>
+
       <Navbar />
 
-      {/* Hero Section */}
-      <HeroSection />
+      <main id="main">
+        <HeroSection />
+        <Features />
+        <Workflow />
+        <Testimonials />
+        <FAQ />
+      </main>
 
-      {/* Features Section */}
-      <Features />
-
-      {/* Workflow Section */}
-      <Workflow />
-
-      {/* Testimonials Section */}
-      <Testimonials />
-
-      {/* FAQ Section */}
-      <FAQ />
-
-      {/* Footer */}
       <Footer />
-    </div>
+    </>
   );
 }

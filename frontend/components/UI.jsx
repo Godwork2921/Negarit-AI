@@ -1,140 +1,257 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
+import { EASE, SPRING } from "../lib/animations";
 
-export function LoadingSpinner({ size = "md", message = "Loading..." }) {
-  const sizeClasses = {
-    sm: "w-6 h-6",
-    md: "w-10 h-10",
-    lg: "w-16 h-16",
-  };
+const sizeMap = {
+  sm: "size-5 border-2",
+  md: "size-8 border-2",
+  lg: "size-12 border-[3px]",
+};
 
+export function LoadingSpinner({ size = "md", message, className = "" }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-4">
-      <div className={`${sizeClasses[size]} border-4 border-white/10 border-t-indigo-500 rounded-full animate-spin`} />
-      <p className="text-gray-400 text-sm">{message}</p>
+    <div
+      className={`flex flex-col items-center justify-center gap-3 ${className}`}
+      role="status"
+      aria-live="polite"
+    >
+      <div
+        className={`animate-spin rounded-full border-[var(--border-strong)] border-t-[var(--primary)] ${sizeMap[size]}`}
+      />
+      {message ? <p className="text-sm text-muted">{message}</p> : null}
+      <span className="sr-only">Loading</span>
     </div>
   );
 }
 
-export function Toast({ message, type = "info", onClose }) {
-  const bgColor = {
-    success: "bg-green-500/20 border-green-500/30 text-green-300",
-    error: "bg-red-500/20 border-red-500/30 text-red-300",
-    warning: "bg-yellow-500/20 border-yellow-500/30 text-yellow-300",
-    info: "bg-indigo-500/20 border-indigo-500/30 text-indigo-300",
-  };
+const toneStyles = {
+  success: "bg-success-soft text-success",
+  error: "bg-danger-soft text-danger",
+  danger: "bg-danger-soft text-danger",
+  warning: "bg-warning-soft text-warning",
+  info: "bg-info-soft text-info",
+  primary: "bg-primary-soft text-primary",
+  neutral: "bg-[var(--border)] text-muted",
+};
+
+const toneIcons = {
+  success: "M5 13l4 4L19 7",
+  error: "M6 6l12 12M18 6L6 18",
+  danger: "M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z",
+  warning: "M12 9v4m0 4h.01M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z",
+  info: "M12 16v-4m0-4h.01M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z",
+  primary: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z",
+  neutral: "M6 6l12 12M18 6L6 18",
+};
+
+export function Toast({ message, tone = "info", onClose, title }) {
+  const reduced = useReducedMotion();
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className={`${bgColor[type]} border rounded-lg px-4 py-3 flex items-center justify-between gap-4 max-w-md`}
+      initial={reduced ? { opacity: 1 } : { opacity: 0, y: -16, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={reduced ? { opacity: 0 } : { opacity: 0, y: -12, scale: 0.97 }}
+      transition={SPRING.snappy}
+      role="status"
+      aria-live="polite"
+      className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-xl2 border border-[var(--border)] bg-[var(--surface-overlay)] p-4 shadow-[var(--shadow-lg)] backdrop-blur-xl"
     >
-      <span>{message}</span>
-      <button onClick={onClose} className="text-lg hover:opacity-70">
-        ×
-      </button>
+      <span
+        className={`mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg ${toneStyles[tone] ?? toneStyles.info}`}
+      >
+        <svg
+          className="size-3.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path d={toneIcons[tone] ?? toneIcons.info} />
+        </svg>
+      </span>
+
+      <div className="min-w-0 flex-1">
+        {title ? <p className="text-sm font-semibold text-ink">{title}</p> : null}
+        <p className="text-sm leading-relaxed text-muted">{message}</p>
+      </div>
+
+      {onClose ? (
+        <button
+          onClick={onClose}
+          aria-label="Dismiss"
+          className="-mr-1 -mt-1 grid size-6 shrink-0 place-items-center rounded-md text-subtle transition-colors hover:bg-[var(--border)] hover:text-ink"
+        >
+          <svg
+            className="size-3.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      ) : null}
     </motion.div>
   );
 }
 
-export function Badge({ label, type = "default", size = "md" }) {
-  const typeClasses = {
-    default: "bg-gray-500/20 text-gray-300 border-gray-500/30",
-    success: "bg-green-500/20 text-green-300 border-green-500/30",
-    warning: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
-    danger: "bg-red-500/20 text-red-300 border-red-500/30",
-    primary: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30",
-  };
-
-  const sizeClasses = {
-    sm: "px-2 py-0.5 text-xs",
-    md: "px-3 py-1.5 text-sm",
-    lg: "px-4 py-2 text-base",
+export function Badge({ children, tone = "neutral", size = "md", className = "", dot }) {
+  const sizes = {
+    sm: "px-2 py-0.5 text-[11px]",
+    md: "px-2.5 py-1 text-xs",
+    lg: "px-3.5 py-1.5 text-sm",
   };
 
   return (
-    <span className={`inline-flex items-center gap-2 rounded-full border font-semibold ${typeClasses[type]} ${sizeClasses[size]}`}>
-      {label}
+    <span className={`badge ${sizes[size]} ${toneStyles[tone] ?? toneStyles.neutral} ${className}`}>
+      {dot ? (
+        <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
+      ) : null}
+      {children}
     </span>
   );
 }
 
-export function Alert({ title, message, type = "info", onClose }) {
-  const colors = {
-    success: "bg-green-500/10 border-green-500/30 text-green-400",
-    error: "bg-red-500/10 border-red-500/30 text-red-400",
-    warning: "bg-yellow-500/10 border-yellow-500/30 text-yellow-400",
-    info: "bg-indigo-500/10 border-indigo-500/30 text-indigo-400",
-  };
-
-  const icons = {
-    success: "✓",
-    error: "✕",
-    warning: "⚠",
-    info: "ℹ",
-  };
+export function Alert({ title, children, tone = "info", onClose }) {
+  const reduced = useReducedMotion();
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -10 }}
+      initial={reduced ? { opacity: 1 } : { opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className={`${colors[type]} border rounded-lg p-4 flex items-start gap-4`}
+      exit={reduced ? { opacity: 0 } : { opacity: 0, y: -8 }}
+      transition={SPRING.snappy}
+      role={tone === "error" || tone === "danger" ? "alert" : "status"}
+      className={`flex items-start gap-3 rounded-xl2 border p-4 ${
+        tone === "success"
+          ? "border-[var(--success)]/30 bg-success-soft"
+          : tone === "warning"
+            ? "border-[var(--warning)]/30 bg-warning-soft"
+            : tone === "error" || tone === "danger"
+              ? "border-[var(--danger)]/30 bg-danger-soft"
+              : "border-[var(--info)]/30 bg-info-soft"
+      }`}
     >
-      <span className="text-xl flex-shrink-0">{icons[type]}</span>
-      <div className="flex-1">
-        {title && <h3 className="font-semibold mb-1">{title}</h3>}
-        {message && <p className="text-sm opacity-90">{message}</p>}
+      <span
+        className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-md ${
+          toneStyles[tone] ?? toneStyles.info
+        }`}
+      >
+        <svg
+          className="size-3.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path d={toneIcons[tone] ?? toneIcons.info} />
+        </svg>
+      </span>
+
+      <div className="min-w-0 flex-1">
+        {title ? <p className="text-sm font-semibold text-ink">{title}</p> : null}
+        {children ? (
+          <div className="text-sm leading-relaxed text-muted">{children}</div>
+        ) : null}
       </div>
-      {onClose && (
-        <button onClick={onClose} className="text-xl hover:opacity-70 flex-shrink-0">
-          ×
+
+      {onClose ? (
+        <button
+          onClick={onClose}
+          aria-label="Dismiss"
+          className="-mr-1 -mt-1 grid size-6 shrink-0 place-items-center rounded-md text-subtle transition-colors hover:bg-[var(--border)] hover:text-ink"
+        >
+          <svg
+            className="size-3.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
         </button>
-      )}
+      ) : null}
     </motion.div>
   );
 }
 
-export function Button({ children, variant = "primary", size = "md", isLoading = false, disabled = false, ...props }) {
-  const variants = {
-    primary: "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-600/25 hover:shadow-indigo-600/40",
-    secondary: "border border-white/20 hover:border-white/40 hover:bg-white/5",
-    danger: "bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 shadow-lg shadow-red-600/25",
-    ghost: "hover:bg-white/5",
-  };
+const buttonVariants = {
+  primary: "btn-primary",
+  secondary: "btn-secondary",
+  ghost: "btn-ghost",
+  danger: "btn-danger",
+};
 
-  const sizes = {
-    sm: "px-3 py-1.5 text-sm",
-    md: "px-6 py-3 text-base",
-    lg: "px-8 py-4 text-lg",
-  };
+const buttonSizes = {
+  sm: "px-3.5 py-2 text-sm",
+  md: "px-5 py-2.5 text-sm",
+  lg: "px-7 py-3.5 text-base",
+};
+
+export function Button({
+  children,
+  variant = "primary",
+  size = "md",
+  loading = false,
+  disabled = false,
+  className = "",
+  type = "button",
+  as = "button",
+  ...props
+}) {
+  const isInert = disabled || loading;
+  const isNative = as === "button";
+  const Tag = as;
 
   return (
-    <motion.button
-      whileHover={{ scale: disabled ? 1 : 1.05 }}
-      whileTap={{ scale: disabled ? 1 : 0.95 }}
-      disabled={disabled || isLoading}
-      className={`text-white font-semibold rounded-lg transition-all duration-300 ${variants[variant]} ${sizes[size]} disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
+    <Tag
+      {...(isNative ? { type, disabled: isInert } : {})}
+      aria-disabled={isNative ? undefined : isInert || undefined}
+      aria-busy={loading || undefined}
+      className={`${buttonVariants[variant] ?? buttonVariants.primary} ${
+        buttonSizes[size]
+      } ${className}`}
       {...props}
     >
-      {isLoading && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+      {loading ? (
+        <span
+          className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+          aria-hidden="true"
+        />
+      ) : null}
       {children}
-    </motion.button>
+    </Tag>
   );
 }
 
-export function Card({ children, className = "", ...props }) {
+export function Card({ children, className = "", interactive = true, as = "div", ...props }) {
+  const MotionTag = motion[as] ?? motion.div;
+  const reduced = useReducedMotion();
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
+    <MotionTag
+      initial={reduced ? { opacity: 1 } : { opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`bg-white/5 border border-white/10 rounded-2xl backdrop-blur-xl hover:border-white/20 transition-all duration-300 ${className}`}
+      transition={{ duration: 0.45, ease: EASE.out }}
+      whileHover={interactive && !reduced ? { y: -4 } : undefined}
+      className={`${interactive ? "card" : "surface"} ${className}`}
       {...props}
     >
       {children}
-    </motion.div>
+    </MotionTag>
   );
 }

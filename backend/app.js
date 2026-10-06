@@ -8,28 +8,24 @@ import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } fro
 
 const app = express();
 
-// ═══ Configuration ═══
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || "development";
 const OPENROUTER_API = "https://openrouter.ai/api/v1/chat/completions";
 const JWT_SECRET = process.env.JWT_SECRET || "negarit-secret-key-change-in-production";
 const CORS_ORIGINS = (process.env.CORS_ORIGIN || "http://localhost:3000,http://localhost:3001").split(",");
 
-// ═══ Middleware ═══
+
 app.use(cors({ origin: CORS_ORIGINS, credentials: true }));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
-// Request logging middleware
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
 });
 
-// ═══ In-memory store (replace with database in production) ═══
 const users = [];
 
-// ═══ Authentication Middleware ═══
 function authenticate(req, res, next) {
   const header = req.headers.authorization;
   if (!header) {
@@ -50,7 +46,6 @@ function authenticate(req, res, next) {
   }
 }
 
-// ═══ Validation Middleware ═══
 function validateEmail(email) {
   const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return regex.test(email);
@@ -60,7 +55,6 @@ function validatePassword(password) {
   return password && password.length >= 8;
 }
 
-// ═══ Error Handler ═══
 function handleError(err, res, statusCode = 500) {
   console.error("Error:", err.message);
   const isDev = NODE_ENV === "development";
@@ -70,13 +64,11 @@ function handleError(err, res, statusCode = 500) {
   });
 }
 
-// ═══ Authentication Routes ═══
 
 app.post("/api/auth/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // Validate input
     if (!name || !email || !password) {
       return res.status(400).json({ error: "Name, email, and password are required" });
     }
@@ -98,7 +90,6 @@ app.post("/api/auth/register", async (req, res) => {
       return res.status(409).json({ error: "Email is already registered" });
     }
 
-    // Hash password and create user
     const hashed = await bcrypt.hash(password, 10);
     const user = {
       id: users.length + 1,
@@ -110,7 +101,6 @@ app.post("/api/auth/register", async (req, res) => {
 
     users.push(user);
 
-    // Generate token
     const token = jwt.sign(
       { id: user.id, name: user.name, email: user.email },
       JWT_SECRET,
@@ -134,24 +124,20 @@ app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate input
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
     }
 
-    // Find user
     const user = users.find((u) => u.email === email.toLowerCase().trim());
     if (!user) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    // Verify password
     const match = await bcrypt.compare(password, user.password);
     if (!match) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    // Generate token
     const token = jwt.sign(
       { id: user.id, name: user.name, email: user.email },
       JWT_SECRET,
@@ -179,11 +165,7 @@ app.get("/api/auth/me", authenticate, (req, res) => {
   }
 });
 
-/**
- * Google OAuth endpoint
- * Verifies Google ID token and authenticates user
- * Creates user if doesn't exist
- */
+
 app.post("/api/auth/google", async (req, res) => {
   try {
     const { token } = req.body;
@@ -223,15 +205,12 @@ app.post("/api/auth/google", async (req, res) => {
         return res.status(400).json({ error: "Google token does not contain email" });
       }
 
-      // Normalize email
       const email = payload.email.toLowerCase().trim();
       const name = payload.name || payload.email.split('@')[0];
 
-      // Find existing user or create new one
       let user = users.find((u) => u.email === email);
 
       if (!user) {
-        // Create new user from Google data
         user = {
           id: users.length + 1,
           name: name,
@@ -491,7 +470,7 @@ app.get("/health", (req, res) => {
 // ═══ AI Chatbot ═══
 app.post("/api/chat", async (req, res) => {
   try {
-    const { message, language = "english" } = req.body;
+    const { message, language = "english", history = [] } = req.body;
 
     if (!message || !message.trim()) {
       return res.status(400).json({ error: "Message is required" });
@@ -508,25 +487,35 @@ app.post("/api/chat", async (req, res) => {
       oromo: "Deebii kee Afaan Oromoon kenni.",
     }[language] || "Answer in English.";
 
-    const prompt = `You are Negarit AI Assistant, a helpful cybersecurity chatbot for the Negarit AI fraud detection platform.
+    const systemPrompt = `You are Negarit AI Assistant, a helpful cybersecurity chatbot for the Negarit AI fraud detection platform.
 
 Your role:
 - Explain what phishing, smishing, vishing, deepfakes, malware, and other cyber threats are in simple terms
 - Explain the purpose and features of Negarit AI (AI-powered fraud detection for messages, images, URLs; sender analysis; risk scoring)
+- Explain how to PREVENT and respond to these threats: concrete steps users can take (verifying senders, checking URLs before clicking, enabling MFA, recognizing urgency/pressure tactics, reporting suspicious content, what to do if they already clicked or shared data)
 - Provide cybersecurity awareness tips
 - Keep answers concise (under 150 words) and beginner-friendly
+- Use short paragraphs or a short bullet list rather than walls of text
 
-${langInstruction}
+${langInstruction}`;
 
-User: ${message.trim()}
+    const messages = [{ role: "system", content: systemPrompt }];
 
-Assistant:`;
+    if (Array.isArray(history)) {
+      for (const turn of history.slice(-10)) {
+        const role = turn?.role === "assistant" ? "assistant" : "user";
+        const content = typeof turn?.text === "string" ? turn.text.trim() : "";
+        if (content) messages.push({ role, content });
+      }
+    }
+
+    messages.push({ role: "user", content: message.trim() });
 
     const { data } = await axios.post(
       OPENROUTER_API,
       {
         model: "openai/gpt-4o-mini",
-        messages: [{ role: "user", content: prompt }],
+        messages,
         max_tokens: 600,
       },
       {
@@ -719,12 +708,10 @@ app.get("/api/library/download", async (req, res) => {
   }
 });
 
-// ═══ 404 Handler ═══
 app.use((req, res) => {
   res.status(404).json({ error: "Endpoint not found" });
 });
 
-// ═══ Error Handler ═══
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);
   res.status(500).json({
@@ -733,17 +720,14 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ═══ Start Server ═══
 const server = app.listen(PORT, () => {
   console.log(`
-╔══════════════════════════════════════╗
-║     NegaritAI Backend Server Started  ║
-╠══════════════════════════════════════╣
-║  Environment: ${NODE_ENV.padEnd(24)} ║
-║  Port: ${String(PORT).padEnd(31)} ║
-║  API: http://localhost:${String(PORT).padEnd(24)} ║
-║  CORS Origins: ${CORS_ORIGINS.join(", ").padEnd(22)} ║
-╚══════════════════════════════════════╝
+
+║     NegaritAI Backend Server Started  
+  Environment: ${NODE_ENV.padEnd(24)} 
+  Port: ${String(PORT).padEnd(31)} 
+  API: http://localhost:${String(PORT).padEnd(24)} 
+  CORS Origins: ${CORS_ORIGINS.join(", ").padEnd(22)} 
   `);
 });
 
